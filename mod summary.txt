@@ -1,0 +1,123 @@
+================================================================================
+  CHEATMOD - MOD SUMMARY
+  Game: Remnant 2
+================================================================================
+
+OVERVIEW
+--------
+CheatMod is a UE4SS-based Lua scripting mod for Remnant 2 that grants the
+player a suite of in-game cheats through hotkeys and console commands. It
+operates by directly accessing and manipulating Unreal Engine player objects
+at runtime using the UEHelpers library bundled with RE-UE4SS.
+
+The mod is focused on quality-of-life cheating: keeping the player alive,
+bypassing stamina limits, leveling up on demand, boosting combat feel, and
+managing inventory item quantities and weapon levels — all without needing
+Cheat Engine or a save editor.
+
+Inventory operations share a common RunFnInPlayerInv helper that walks the
+player's Inventory component, keeping the per-command logic thin. A
+knownItemMappings table provides friendly name aliases for common materials
+(e.g. "Iron" → "Material_Iron_C").
+
+Installation 
+-------
+Install ue4ss ( only tested on latest zdev - Make sure to extract to <path-to-your-game-files>\Remnant2\Binaries\Win64 )
+add mod to Mods folder ex: <path-to-your-ue4ss-in-game>/Mods
+enable in Mods/mods.txt ( add CheatMod: 1 )
+============
+
+REQUIREMENTS:
+* UE4SS (Unreal Engine 4 Scripting System)
+  Download: https://github.com/UE4SS-RE/RE-UE4SS/releases
+
+INSTALLATION STEPS:
+1. Install UE4SS:
+   - Download latest UE4SS release
+   - Extract to your game's Win64 folder:
+     [Steam Path]\steamapps\common${1:GameName}${2:GameName}\Binaries\Win64\
+
+2. Install ModName:
+   - Download and extract mod files
+   - Place in: ue4ss/Mods/ModName/
+
+3. Configure:
+   - Open ue4ss/mods.txt
+   - Add line: ModName : 1
+
+4. Launch game - mod will auto-initialize
+
+
+FEATURES
+--------
+
+1. REPLENISH ALL RESOURCES (Hotkey: F1)
+   - Instantly restores Health, Ammo, Dragon Hearts, Cooldowns, and Mod Power
+     in a single keypress.
+   - Recommended to bind to R1 (controller) or equivalent for quick access
+     mid-combat. Works cleanly with RegisterKeyBind — no console required.
+
+2. INFINITE STAMINA (Hotkey: F2)
+   - Locates the player's Stamina component and appends the FName tag
+     "InfiniteStamina" to its ComponentTags array.
+   - Note: May need to be re-applied after death or level transitions.
+
+3. FAST PLAYER ACTIONS (Hotkey: F3)
+   - Iterates all loaded AnimSequence objects and boosts the RateScale of
+     player animations that are not standard locomotion (walk, jog, sprint,
+     run, crouch, aim).
+   - Non-movement actions (attacks, reloads, interactions) play at 2.0x speed.
+   - Evade roll is set to 1.7x (tuned separately — 2.0x felt too fast).
+   - Provides a noticeably snappier combat feel without breaking traversal.
+
+4. MOD HOTSHOT BOOST (Hotkey: F4)
+   - Finds all active Mod_Hotshot_C instances in memory and multiplies their
+     stats: FireDuration x10, FireBaseDamage x100, ModDuration x10.
+   - Useful when difficulty spikes and you need a significant power bump
+     without swapping loadout.
+
+5. LEVEL UP (Console Command: levelup [n])
+   - Calls OnLevelUp() on the player's Traits object.
+   - Accepts an optional numeric parameter to level up multiple times at once
+     (e.g., "levelup 5" triggers 5 consecutive level-up events).
+   - Defaults to 1 level-up if no parameter is provided.
+
+6. SET INVENTORY ITEM QUANTITY (Console Command: set_inventory_item_quantity <itemName> <quantity>)
+   - Iterates the player's inventory directly via the Inventory component and
+     finds the first item whose blueprint name matches <itemName>.
+   - Supports a knownItemMappings alias table so friendly names can be used
+     (e.g. "Iron" resolves to "Material_Iron_C"); falls back to a raw name
+     search if no alias is defined.
+   - Sets that item's InstanceData.Quantity to <quantity> and logs both the
+     old and new values.
+
+7. SET ALL WEAPON LEVEL (Console Command: set_all_weapon_level <level>)
+   - Iterates the player's inventory and upgrades every item whose blueprint
+     path contains "Weapon" to the specified level.
+   - Useful for quickly maxing out all carried weapons without visiting the
+     upgrade bench.
+
+8. LOG INVENTORY ITEMS (Console Command: log_inventory_items [true|false])
+   - Debug/discovery command that walks the player inventory and prints item
+     blueprint names and instance data to the console.
+   - Without the "true" flag (default): logs only materials and consumables.
+   - With "true": logs every item in the inventory regardless of type.
+   - Handy for identifying the exact name to pass to set_inventory_item_quantity.
+
+
+HOTKEYS REFERENCE
+-----------------
+  F1  - Replenish all resources (health, ammo, dragon hearts, cooldowns, mod power)
+  F2  - Add infinite stamina tag to stamina component
+  F3  - Boost non-locomotion player animation speed (2.0x / evade 1.7x)
+  F4  - Multiply Hotshot mod fire damage and duration stats
+
+
+CONSOLE COMMANDS REFERENCE - Open console with ~ or F10
+---------------------------
+  levelup [n]                                        - Level up 1 or n times
+  set_all_weapon_level <level>                       - Set all weapons in inventory to <level>
+  set_inventory_item_quantity <itemName> <quantity>  - Set quantity of named item (alias or blueprint name)
+  log_inventory_items [true|false]                   - Print inventory items to console (true = all items)
+
+================================================================================
