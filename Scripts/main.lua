@@ -1,25 +1,9 @@
-local HotShotMod = require("mod_hotshot")
-local SandstormMod = require("mod_sandstorm")
-local ConcussiveShotMod = require("mod_concussiveshot")
-local ScrapshotMod = require("mod_scrapshot")
-local HelixMod = require("mod_helix")
-local StatisBeamMod = require("mod_statisbeam")
-local VoltaicRondureMod = require("mod_voltaic_rondure")
-local RottedArrowMod = require("mod_rottedarrow")
 local InventoryUtils = require("inventory_utils")
 local PlayerUtils = require("player_utils")
-local ModSandstorm = SandstormMod.ModSandstorm
-local ModHotShot = HotShotMod.ModHotShot
-local ModConcussiveShot = ConcussiveShotMod.ModConcussiveShot
-local ModStatisBeam = StatisBeamMod.ModStatisBeam
-local ModScrapshot = ScrapshotMod.ModScrapshot
-local ModHelix = HelixMod.ModHelix
-local ModVoltaicRondure = VoltaicRondureMod.ModVoltaicRondure
-local ModRottedArrow = RottedArrowMod.ModRottedArrow
+local WeaponMods = require("WeaponMods.WeaponMods")
 require("cheat_hooks")
 
 print("------------------------- CHEAT MOD ENABLED ---------------")
-
 
 RegisterKeyBind(Key.F1, function()
     PlayerUtils.ReplenishCooldownsAndModPower()
@@ -38,14 +22,7 @@ end)
 -- the only mod that is modified is the one that is equipped on your weapons 
 -- you need to repress when switching mods on your weapons. 
 RegisterKeyBind(Key.F4, function()
-    ModRottedArrow()
-    ModScrapshot()
-    ModHotShot()
-    ModSandstorm()
-    ModConcussiveShot()
-    ModHelix()
-    ModStatisBeam()
-    ModVoltaicRondure()
+    WeaponMods.EnableAllWeaponMods()
 end)
 
 -- Give yourself trait points

@@ -49,7 +49,8 @@ God Mode and Infinite Ammo are event-driven using `RegisterHook`, and both autom
 | `player_utils.lua` | Player state — stamina, cooldowns, leveling, animation speed |
 | `inventory_utils.lua` | Inventory traversal, item quantity editing, weapon level setting |
 | `cheat_hooks.lua` | Event-driven cheats — god mode, infinite ammo, hook lifecycle |
-| `mod_*.lua` (×8) | Per-weapon-mod boosters (one file per supported mod) |
+| `WeaponMods/WeaponMods.lua` | Aggregator — owns all weapon mod imports, exposes `EnableAllWeaponMods()` |
+| `WeaponMods/mod_*.lua` (×8) | Per-weapon-mod boosters (one file per supported mod) |
 
 ---
 

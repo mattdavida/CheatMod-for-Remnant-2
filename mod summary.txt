@@ -20,18 +20,20 @@ CODE STRUCTURE
 The mod is organized into focused modules. main.lua is purely a wiring file
 (imports, keybinds, console command handlers) with no implementation logic.
 
-  main.lua            Wiring — imports, hotkey binds, console handlers
-  player_utils.lua    Player state — stamina, cooldowns, leveling, anim speed
-  inventory_utils.lua Inventory traversal, item editing, weapon level setting
-  cheat_hooks.lua     Event-driven cheats — god mode, infinite ammo, hook lifecycle
-  mod_hotshot.lua       Weapon mod booster (Mod_Hotshot_C)
-  mod_sandstorm.lua     Weapon mod booster (Mod_Sandstorm_C)
-  mod_concussiveshot.lua  Weapon mod booster (Mod_ConcussiveShot_C)
-  mod_helix.lua         Weapon mod booster (Mod_Helix_C)
-  mod_statisbeam.lua    Weapon mod booster (Mod_StasisBeam_C)
-  mod_voltaic_rondure.lua Weapon mod booster (Mod_VoltaicRondure_C)
-  mod_scrapshot.lua     Weapon mod booster (Mod_Scrapshot_C)
-  mod_rottedarrow.lua   Weapon mod booster (Mod_RottedArrow_C)
+  main.lua                      Wiring — imports, hotkey binds, console handlers
+  player_utils.lua              Player state — stamina, cooldowns, leveling, anim speed
+  inventory_utils.lua           Inventory traversal, item editing, weapon level setting
+  cheat_hooks.lua               Event-driven cheats — god mode, infinite ammo, hook lifecycle
+  WeaponMods/WeaponMods.lua     Aggregator — owns all weapon mod imports, exposes
+                                EnableAllWeaponMods() as a single entry point
+  WeaponMods/mod_hotshot.lua        Weapon mod booster (Mod_Hotshot_C)
+  WeaponMods/mod_sandstorm.lua      Weapon mod booster (Mod_Sandstorm_C)
+  WeaponMods/mod_concussiveshot.lua Weapon mod booster (Mod_ConcussiveShot_C)
+  WeaponMods/mod_helix.lua          Weapon mod booster (Mod_Helix_C)
+  WeaponMods/mod_statisbeam.lua     Weapon mod booster (Mod_StasisBeam_C)
+  WeaponMods/mod_voltaic_rondure.lua  Weapon mod booster (Mod_VoltaicRondure_C)
+  WeaponMods/mod_scrapshot.lua      Weapon mod booster (Mod_Scrapshot_C)
+  WeaponMods/mod_rottedarrow.lua    Weapon mod booster (Mod_RottedArrow_C)
 
 God Mode and Infinite Ammo are event-driven and use RegisterHook to respond
 to in-game events in real time. Both hooks are registered inside a
