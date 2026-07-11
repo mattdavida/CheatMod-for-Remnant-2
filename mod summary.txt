@@ -15,10 +15,40 @@ bypassing stamina limits, leveling up on demand, boosting combat feel, and
 managing inventory item quantities and weapon levels — all without needing
 Cheat Engine or a save editor.
 
-Inventory operations share a common RunFnInPlayerInv helper that walks the
-player's Inventory component, keeping the per-command logic thin. A
-knownItemMappings table provides friendly name aliases for common materials
-(e.g. "Iron" → "Material_Iron_C").
+CODE STRUCTURE
+--------------
+The mod is organized into focused modules. main.lua is purely a wiring file
+(imports, keybinds, console command handlers) with no implementation logic.
+
+  main.lua            Wiring — imports, hotkey binds, console handlers
+  player_utils.lua    Player state — stamina, cooldowns, leveling, anim speed
+  inventory_utils.lua Inventory traversal, item editing, weapon level setting
+  cheat_hooks.lua     Event-driven cheats — god mode, infinite ammo, hook lifecycle
+  mod_hotshot.lua       Weapon mod booster (Mod_Hotshot_C)
+  mod_sandstorm.lua     Weapon mod booster (Mod_Sandstorm_C)
+  mod_concussiveshot.lua  Weapon mod booster (Mod_ConcussiveShot_C)
+  mod_helix.lua         Weapon mod booster (Mod_Helix_C)
+  mod_statisbeam.lua    Weapon mod booster (Mod_StasisBeam_C)
+  mod_voltaic_rondure.lua Weapon mod booster (Mod_VoltaicRondure_C)
+  mod_scrapshot.lua     Weapon mod booster (Mod_Scrapshot_C)
+  mod_rottedarrow.lua   Weapon mod booster (Mod_RottedArrow_C)
+
+God Mode and Infinite Ammo are event-driven and use RegisterHook to respond
+to in-game events in real time. Both hooks are registered inside a
+NotifyOnNewObject callback so they automatically re-register after respawns
+and level transitions without needing to be toggled again.
+
+Inventory operations share a common RunFnInPlayerInv helper (in
+inventory_utils.lua) that walks the player's Inventory component, keeping
+per-command logic thin. A knownItemMappings table provides friendly name
+aliases for common materials (e.g. "Iron" → "Material_Iron_C").
+
+Weapon mod boosting follows a consistent per-module pattern. Each module
+captures the original stat values on first activation and always multiplies
+from those defaults, so pressing F4 multiple times is safe and idempotent.
+Only mods currently equipped on your weapons will be present in memory —
+unequipped mods are silently skipped. Some mods (Scrapshot, RottedArrow) also
+zero out NumChargesConsumedOnUse so they are effectively free to cast.
 
 Installation 
 -------
@@ -35,15 +65,15 @@ INSTALLATION STEPS:
 1. Install UE4SS:
    - Download latest UE4SS release
    - Extract to your game's Win64 folder:
-     [Steam Path]\steamapps\common${1:GameName}${2:GameName}\Binaries\Win64\
+     [Steam Path]\steamapps\common\Remnant2\Remnant2\Binaries\Win64\
 
-2. Install ModName:
+2. Install CheatMod:
    - Download and extract mod files
-   - Place in: ue4ss/Mods/ModName/
+   - Place in: ue4ss/Mods/CheatMod/
 
 3. Configure:
    - Open ue4ss/mods.txt
-   - Add line: ModName : 1
+   - Add line: CheatMod : 1
 
 4. Launch game - mod will auto-initialize
 
@@ -51,9 +81,9 @@ INSTALLATION STEPS:
 FEATURES
 --------
 
-1. REPLENISH ALL RESOURCES (Hotkey: F1)
-   - Instantly restores Health, Ammo, Dragon Hearts, Cooldowns, and Mod Power
-     in a single keypress.
+1. REPLENISH COOLDOWNS AND MOD POWER (Hotkey: F1)
+   - Instantly resets all skill Cooldowns and fills Mod Power in a single
+     keypress. Health, Ammo, and Dragon Hearts are not affected.
    - Recommended to bind to R1 (controller) or equivalent for quick access
      mid-combat. Works cleanly with RegisterKeyBind — no console required.
 
@@ -66,15 +96,32 @@ FEATURES
    - Iterates all loaded AnimSequence objects and boosts the RateScale of
      player animations that are not standard locomotion (walk, jog, sprint,
      run, crouch, aim).
-   - Non-movement actions (attacks, reloads, interactions) play at 2.0x speed.
-   - Evade roll is set to 1.7x (tuned separately — 2.0x felt too fast).
+   - Evade roll is tuned to a separate value for better feel.
    - Provides a noticeably snappier combat feel without breaking traversal.
 
-4. MOD HOTSHOT BOOST (Hotkey: F4)
-   - Finds all active Mod_Hotshot_C instances in memory and multiplies their
-     stats: FireDuration x10, FireBaseDamage x100, ModDuration x10.
-   - Useful when difficulty spikes and you need a significant power bump
-     without swapping loadout.
+4. BOOST ALL SUPPORTED WEAPON MODS (Hotkey: F4)
+   - Fires all eight weapon mod boost modules in sequence. Each module finds
+     its target UE class in memory and applies stat multipliers to it.
+   - Only mods currently equipped on your weapons will be present in memory;
+     unequipped mods are not found and are silently skipped with no errors.
+   - Each module captures baseline values on first activation — pressing F4
+     again is idempotent and will not compound the multipliers.
+   - Supported mods and their boosted stats:
+       HotShot         FireDuration, FireBaseDamage, ModDuration
+       Sandstorm        CycloneDuration, CycloneBaseRadius, CycloneHomingRadius,
+                        CycloneDPS, CycloneDamageFrequency
+       ConcussiveShot   BlastDamage, MaxRange, BaseKnockbackDistance,
+                        AOERadius, MaxCharges
+       Helix            MaxCharges, ImpactDamage, SideWinderDamage, SideWinderCount
+       StatisBeam       Damage, Duration, RequiredHitDuration
+       VoltaicRondure   PulseDelay (pinned to minimum), OrbDamage,
+                        ProjectileLifetime, EffectRadius, ShockDamage, ShockDuration
+       Scrapshot        MaxCharges, BlastRadius, DOTDamage, CaltropDuration,
+                        BleedDamage, BleedDuration,
+                        NumChargesConsumedOnUse (zeroed — free to cast)
+       RottedArrow      MaxCharges, WeakSpotMod, ImpactDamage, DOTDamage,
+                        CloudDuration, BlastRadius, CloudDamagePerSecond,
+                        NumChargesConsumedOnUse (zeroed — free to cast)
 
 5. LEVEL UP (Console Command: levelup [n])
    - Calls OnLevelUp() on the player's Traits object.
@@ -104,13 +151,28 @@ FEATURES
    - With "true": logs every item in the inventory regardless of type.
    - Handy for identifying the exact name to pass to set_inventory_item_quantity.
 
+9. GOD MODE (Console Command: toggle_god_mode)
+   - Toggles God Mode on/off. Hooks into HandleDamageTaken via RegisterHook.
+   - Whenever the player takes damage greater than 0, health is immediately
+     replenished, making the player effectively unkillable.
+   - Hook is automatically re-registered after respawns and level transitions
+     via NotifyOnNewObject — no need to re-toggle after dying.
+
+10. INFINITE AMMO (Console Command: toggle_infinite_ammo)
+    - Toggles Infinite Ammo on/off. Hooks into Weapon_Gun_Base_C:OnFire.
+    - Every time the player fires, ammo is instantly replenished so magazines
+      never run dry.
+    - Hook is automatically re-registered after respawns and level transitions
+      via NotifyOnNewObject — no need to re-toggle after dying.
+
 
 HOTKEYS REFERENCE
 -----------------
-  F1  - Replenish all resources (health, ammo, dragon hearts, cooldowns, mod power)
+  F1  - Replenish cooldowns and mod power
   F2  - Add infinite stamina tag to stamina component
-  F3  - Boost non-locomotion player animation speed (2.0x / evade 1.7x)
-  F4  - Multiply Hotshot mod fire damage and duration stats
+  F3  - Boost non-locomotion player animation speed
+  F4  - Boost all supported weapon mods (HotShot, Sandstorm, ConcussiveShot,
+        Helix, StatisBeam, VoltaicRondure, Scrapshot, RottedArrow)
 
 
 CONSOLE COMMANDS REFERENCE - Open console with ~ or F10
@@ -119,5 +181,7 @@ CONSOLE COMMANDS REFERENCE - Open console with ~ or F10
   set_all_weapon_level <level>                       - Set all weapons in inventory to <level>
   set_inventory_item_quantity <itemName> <quantity>  - Set quantity of named item (alias or blueprint name)
   log_inventory_items [true|false]                   - Print inventory items to console (true = all items)
+  toggle_god_mode                                    - Toggle god mode (auto-replenishes health on any hit)
+  toggle_infinite_ammo                               - Toggle infinite ammo (replenishes on every shot)
 
 ================================================================================
