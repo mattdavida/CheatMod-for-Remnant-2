@@ -4,7 +4,7 @@ A UE4SS-based Lua scripting mod for Remnant 2 that grants a suite of in-game che
 
 The mod focuses on quality-of-life cheating: keeping the player alive, bypassing stamina limits, leveling up on demand, boosting combat feel, and managing inventory item quantities and weapon levels — all without needing Cheat Engine or a save editor.
 
-God Mode and Infinite Ammo are event-driven using `RegisterHook`, and both automatically re-register after respawns and level transitions via `NotifyOnNewObject`. Weapon mod boosting is handled by eight dedicated per-mod modules, each idempotent and safe to re-trigger.
+God Mode and Infinite Ammo register a permanent session hook when you run the command — one-shot activation, no toggle. They stay active for the rest of the session. Restart the game to disable. If a hook drops during a loading screen transition, just re-run the command. Weapon mod boosting is handled by eight dedicated per-mod modules, each idempotent and safe to re-trigger.
 
 ---
 
@@ -48,7 +48,7 @@ God Mode and Infinite Ammo are event-driven using `RegisterHook`, and both autom
 | `main.lua` | Wiring — imports, hotkey binds, console command handlers |
 | `player_utils.lua` | Player state — stamina, cooldowns, leveling, animation speed |
 | `inventory_utils.lua` | Inventory traversal, item quantity editing, weapon level setting |
-| `cheat_hooks.lua` | Event-driven cheats — god mode, infinite ammo, hook lifecycle |
+| `cheat_hooks.lua` | Session-persistent hooks — god mode, infinite ammo |
 | `WeaponMods/WeaponMods.lua` | Aggregator — owns all weapon mod imports, exposes `EnableAllWeaponMods()` |
 | `WeaponMods/mod_*.lua` (×8) | Per-weapon-mod boosters (one file per supported mod) |
 
@@ -78,6 +78,8 @@ God Mode and Infinite Ammo are event-driven using `RegisterHook`, and both autom
 | `mod_scrapshot.lua` | `Mod_Scrapshot_C` | MaxCharges, BlastRadius, DOTDamage, CaltropDuration, BleedDamage, BleedDuration, NumChargesConsumedOnUse (zeroed — free to cast) |
 | `mod_rottedarrow.lua` | `Mod_RottedArrow_C` | MaxCharges, WeakSpotMod, ImpactDamage, DOTDamage, CloudDuration, BlastRadius, CloudDamagePerSecond, NumChargesConsumedOnUse (zeroed — free to cast) |
 
+> **Planned:** Skewer, Defrag, AbrasiveRounds, HeatWave, Tremor
+
 ### Console Commands
 
 Open the console with `` ` `` (tilde) or `F10`.
@@ -88,8 +90,8 @@ Open the console with `` ` `` (tilde) or `F10`.
 | `set_all_weapon_level <level>` | Sets every weapon in the player's inventory to the specified upgrade level. |
 | `set_inventory_item_quantity <itemName> <quantity>` | Sets the quantity of a named inventory item. Supports friendly name aliases (e.g. `Iron` resolves to `Material_Iron_C`) or raw blueprint name search. Logs the old and new values. |
 | `log_inventory_items [true\|false]` | Prints inventory item blueprint names and instance data to the console. Omit the flag (or pass `false`) to log only materials and consumables; pass `true` to log every item. Useful for finding the exact name to pass to `set_inventory_item_quantity`. |
-| `toggle_god_mode` | Toggles God Mode on/off. Hooks into `HandleDamageTaken` — any hit that would deal damage immediately triggers a health replenish. Auto-reregisters after respawns and level transitions. |
-| `toggle_infinite_ammo` | Toggles Infinite Ammo on/off. Hooks into `Weapon_Gun_Base_C:OnFire` — ammo is replenished on every shot. Auto-reregisters after respawns and level transitions. |
+| `start_god_mode` | Registers a permanent hook into `HandleDamageTaken` — any hit immediately replenishes health for the rest of the session. No toggle; restart the game to disable. Re-run if the hook drops during a loading screen transition. |
+| `start_infinite_ammo` | Registers a permanent hook into `Weapon_Gun_Base_C:OnFire` — ammo is replenished on every shot for the rest of the session. No toggle; restart the game to disable. Re-run if the hook drops during a loading screen transition. |
 
 ---
 
@@ -105,6 +107,6 @@ Open the console with `` ` `` (tilde) or `F10`.
 
 - **Infinite Stamina** may need to be re-applied after respawning or transitioning between areas.
 - **Fast Player Actions** affects all currently loaded `AnimSequence` objects — press `F3` again after loading into a new area if animations reset.
-- **God Mode and Infinite Ammo** automatically survive respawns and level transitions — no need to re-toggle after dying.
+- **God Mode and Infinite Ammo** are session-persistent once started. Restart the game to disable. If a hook drops during a loading screen transition, re-run the command to restore it.
 - **Weapon mod boosts (F4)** are idempotent — safe to press multiple times without compounding the multipliers. Only mods equipped on your current weapons will be in memory; others are silently skipped. Re-press after switching weapon mods to apply boosts to newly equipped ones.
 - `log_inventory_items` is a handy discovery tool when you don't know the exact blueprint name for an item you want to modify with `set_inventory_item_quantity`.

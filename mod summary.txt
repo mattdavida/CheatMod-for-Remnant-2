@@ -23,7 +23,7 @@ The mod is organized into focused modules. main.lua is purely a wiring file
   main.lua                      Wiring — imports, hotkey binds, console handlers
   player_utils.lua              Player state — stamina, cooldowns, leveling, anim speed
   inventory_utils.lua           Inventory traversal, item editing, weapon level setting
-  cheat_hooks.lua               Event-driven cheats — god mode, infinite ammo, hook lifecycle
+  cheat_hooks.lua               Session-persistent hooks — god mode, infinite ammo
   WeaponMods/WeaponMods.lua     Aggregator — owns all weapon mod imports, exposes
                                 EnableAllWeaponMods() as a single entry point
   WeaponMods/mod_hotshot.lua        Weapon mod booster (Mod_Hotshot_C)
@@ -35,10 +35,13 @@ The mod is organized into focused modules. main.lua is purely a wiring file
   WeaponMods/mod_scrapshot.lua      Weapon mod booster (Mod_Scrapshot_C)
   WeaponMods/mod_rottedarrow.lua    Weapon mod booster (Mod_RottedArrow_C)
 
-God Mode and Infinite Ammo are event-driven and use RegisterHook to respond
-to in-game events in real time. Both hooks are registered inside a
-NotifyOnNewObject callback so they automatically re-register after respawns
-and level transitions without needing to be toggled again.
+Planned weapon mod additions (tracked in WeaponMods.lua):
+  Mod_Skewer_C, Mod_Defrag_C, Mod_AbrasiveRounds_C, Mod_HeatWave_C, Mod_Tremor_C
+
+God Mode and Infinite Ammo register a permanent session hook via RegisterHook
+when the player runs the command. They are one-shot activations — active for
+the rest of the session, no toggle. Restart the game to disable. If a hook
+drops during a loading screen transition, simply re-run the command.
 
 Inventory operations share a common RunFnInPlayerInv helper (in
 inventory_utils.lua) that walks the player's Inventory component, keeping
@@ -153,19 +156,21 @@ FEATURES
    - With "true": logs every item in the inventory regardless of type.
    - Handy for identifying the exact name to pass to set_inventory_item_quantity.
 
-9. GOD MODE (Console Command: toggle_god_mode)
-   - Toggles God Mode on/off. Hooks into HandleDamageTaken via RegisterHook.
-   - Whenever the player takes damage greater than 0, health is immediately
-     replenished, making the player effectively unkillable.
-   - Hook is automatically re-registered after respawns and level transitions
-     via NotifyOnNewObject — no need to re-toggle after dying.
+9. GOD MODE (Console Command: start_god_mode)
+   - Registers a permanent hook into HandleDamageTaken. On any hit, health is
+     immediately replenished, making the player effectively unkillable.
+   - One-shot activation — no toggle. Active for the remainder of the session.
+   - To disable: restart the game.
+   - Note: the hook can occasionally unregister during loading screen
+     transitions. If god mode stops working, simply re-run start_god_mode.
 
-10. INFINITE AMMO (Console Command: toggle_infinite_ammo)
-    - Toggles Infinite Ammo on/off. Hooks into Weapon_Gun_Base_C:OnFire.
-    - Every time the player fires, ammo is instantly replenished so magazines
-      never run dry.
-    - Hook is automatically re-registered after respawns and level transitions
-      via NotifyOnNewObject — no need to re-toggle after dying.
+10. INFINITE AMMO (Console Command: start_infinite_ammo)
+    - Registers a permanent hook into Weapon_Gun_Base_C:OnFire. On every shot,
+      ammo is instantly replenished so magazines never run dry.
+    - One-shot activation — no toggle. Active for the remainder of the session.
+    - To disable: restart the game.
+    - Note: the hook can occasionally unregister during loading screen
+      transitions. If infinite ammo stops working, simply re-run start_infinite_ammo.
 
 
 HOTKEYS REFERENCE
@@ -183,7 +188,7 @@ CONSOLE COMMANDS REFERENCE - Open console with ~ or F10
   set_all_weapon_level <level>                       - Set all weapons in inventory to <level>
   set_inventory_item_quantity <itemName> <quantity>  - Set quantity of named item (alias or blueprint name)
   log_inventory_items [true|false]                   - Print inventory items to console (true = all items)
-  toggle_god_mode                                    - Toggle god mode (auto-replenishes health on any hit)
-  toggle_infinite_ammo                               - Toggle infinite ammo (replenishes on every shot)
+  start_god_mode                                     - Enable god mode for this session (restart game to disable)
+  start_infinite_ammo                                - Enable infinite ammo for this session (restart game to disable)
 
 ================================================================================

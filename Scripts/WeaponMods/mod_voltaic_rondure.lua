@@ -11,11 +11,11 @@ local VoltaicRondureDefaults = {
 
 local VoltaicRondureMultipliers = {
     MaxCharges = 10,
-    OrbDamage = 10,
-    ProjectileLifetime = 2,
-    EffectRadius = 10,
-    ShockDamage = 10,
-    ShockDuration = 10,
+    OrbDamage = 2,
+    ProjectileLifetime = 0.1,
+    EffectRadius = 0.5,
+    ShockDamage = 2,
+    ShockDuration = 2,
     NumChargesConsumedOnUse = 0,
 }
 
@@ -40,7 +40,7 @@ local function ModVoltaicRondure()
             mod.NumChargesConsumedOnUse = VoltaicRondureDefaults.NumChargesConsumedOnUse * VoltaicRondureMultipliers.NumChargesConsumedOnUse
             mod.PulseDelay = 0.01
             mod.OrbDamage = VoltaicRondureDefaults.OrbDamage * VoltaicRondureMultipliers.OrbDamage
-            mod.ProjectileLifetime = VoltaicRondureDefaults.ProjectileLifetime * VoltaicRondureMultipliers.ProjectileLifetime
+            mod.ProjectileLifetime = 2.0 -- short burst of one shots
             mod.EffectRadius = VoltaicRondureDefaults.EffectRadius * VoltaicRondureMultipliers.EffectRadius
             mod.ShockDamage = VoltaicRondureDefaults.ShockDamage * VoltaicRondureMultipliers.ShockDamage
             mod.ShockDuration = VoltaicRondureDefaults.ShockDuration * VoltaicRondureMultipliers.ShockDuration

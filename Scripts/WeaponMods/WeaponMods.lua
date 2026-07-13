@@ -18,6 +18,14 @@ local function EnableAllWeaponMods()
     RottedArrowMod.ModRottedArrow()
 end
 
+-- todo
+-- Mod_Skewer_C
+-- Mod_Defrag_C
+-- Mod_AbrasiveRounds_C
+-- Mod_HeatWave_C
+-- Mod_Tremor_C
+
+
 return {
     EnableAllWeaponMods = EnableAllWeaponMods,
 }
