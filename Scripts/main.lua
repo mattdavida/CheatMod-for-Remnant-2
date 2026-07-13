@@ -19,8 +19,8 @@ RegisterKeyBind(Key.F3, function()
     PlayerUtils.FastPlayerActions()
 end)
 
--- the only mod that is modified is the one that is equipped on your weapons 
--- you need to repress when switching mods on your weapons. 
+-- the only mod that is modified is the one that is equipped on your weapons
+-- you need to repress when switching mods on your weapons.
 RegisterKeyBind(Key.F4, function()
     WeaponMods.EnableAllWeaponMods()
 end)

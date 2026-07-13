@@ -1,28 +1,24 @@
 local UEHelpers = require("UEHelpers.UEHelpers")
-local GOD_MODE_HOOK_NAME =
-"/Game/Characters/Player/Base/Character_Master_Player_Base.Character_Master_Player_Base_C:HandleDamageTaken"
 local INFINITE_AMMO_HOOK_NAME = "/Game/Items/Weapons/Common/Weapon_Gun_Base.Weapon_Gun_Base_C:OnFire"
+local MOFIFY_INCOMING_DAMAGE_HOOK_NAME =
+"/Game/Characters/Player/Base/Character_Master_Player_Base.Character_Master_Player_Base_C:ModifyIncomingDamage"
 
+local godmode = false
+local hookRegistered = false
+RegisterConsoleCommandHandler("toggle_god_mode", function(FullCommand, Parameters, Ar)
+    godmode = not godmode
+    print("God Mode: " .. (godmode and "Enabled" or "Disabled"))
+    if not hookRegistered then
+        hookRegistered = true
+        RegisterHook(MOFIFY_INCOMING_DAMAGE_HOOK_NAME,
+            function(self, DamageInfo)
+                local damage = DamageInfo:get()
+                if godmode then
+                    damage.Damage = 0
+                end
+            end)
+    end
 
--- notes: 
--- these hooks can sometimes unregister at random transitions on loading screens
--- if you notice this, just re-run the command
-RegisterConsoleCommandHandler("start_god_mode", function(FullCommand, Parameters, Ar)
-    print("God mode Enabled: ")
-    RegisterHook(GOD_MODE_HOOK_NAME,
-        function(self, DamageInfo)
-            local p = UEHelpers.GetPlayer()
-            if p then
-                p:ReplenishResources(
-                    true,      -- Health,
-                    false,     -- Ammo
-                    false,     -- DragonHearts
-                    false,     -- Cooldowns
-                    false,     -- ModPower
-                    false      -- IsBossRush
-                )
-            end
-        end)
     return true
 end)
 

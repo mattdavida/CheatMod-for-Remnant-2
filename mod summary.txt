@@ -15,33 +15,14 @@ bypassing stamina limits, leveling up on demand, boosting combat feel, and
 managing inventory item quantities and weapon levels — all without needing
 Cheat Engine or a save editor.
 
-CODE STRUCTURE
---------------
-The mod is organized into focused modules. main.lua is purely a wiring file
-(imports, keybinds, console command handlers) with no implementation logic.
+God Mode is a true toggle — it hooks ModifyIncomingDamage and zeroes all
+incoming damage before it is applied. The hook registers once on first use
+and the toggle flag is a Lua closure shared between the command handler and
+the hook callback.
 
-  main.lua                      Wiring — imports, hotkey binds, console handlers
-  player_utils.lua              Player state — stamina, cooldowns, leveling, anim speed
-  inventory_utils.lua           Inventory traversal, item editing, weapon level setting
-  cheat_hooks.lua               Session-persistent hooks — god mode, infinite ammo
-  WeaponMods/WeaponMods.lua     Aggregator — owns all weapon mod imports, exposes
-                                EnableAllWeaponMods() as a single entry point
-  WeaponMods/mod_hotshot.lua        Weapon mod booster (Mod_Hotshot_C)
-  WeaponMods/mod_sandstorm.lua      Weapon mod booster (Mod_Sandstorm_C)
-  WeaponMods/mod_concussiveshot.lua Weapon mod booster (Mod_ConcussiveShot_C)
-  WeaponMods/mod_helix.lua          Weapon mod booster (Mod_Helix_C)
-  WeaponMods/mod_statisbeam.lua     Weapon mod booster (Mod_StasisBeam_C)
-  WeaponMods/mod_voltaic_rondure.lua  Weapon mod booster (Mod_VoltaicRondure_C)
-  WeaponMods/mod_scrapshot.lua      Weapon mod booster (Mod_Scrapshot_C)
-  WeaponMods/mod_rottedarrow.lua    Weapon mod booster (Mod_RottedArrow_C)
-
-Planned weapon mod additions (tracked in WeaponMods.lua):
-  Mod_Skewer_C, Mod_Defrag_C, Mod_AbrasiveRounds_C, Mod_HeatWave_C, Mod_Tremor_C
-
-God Mode and Infinite Ammo register a permanent session hook via RegisterHook
-when the player runs the command. They are one-shot activations — active for
-the rest of the session, no toggle. Restart the game to disable. If a hook
-drops during a loading screen transition, simply re-run the command.
+Infinite Ammo registers a permanent session hook on first use. It stays
+active for the rest of the session. Restart the game to disable. If the hook
+drops during a loading screen transition, re-run start_infinite_ammo.
 
 Inventory operations share a common RunFnInPlayerInv helper (in
 inventory_utils.lua) that walks the player's Inventory component, keeping
@@ -54,6 +35,29 @@ from those defaults, so pressing F4 multiple times is safe and idempotent.
 Only mods currently equipped on your weapons will be present in memory —
 unequipped mods are silently skipped. Some mods (Scrapshot, RottedArrow) also
 zero out NumChargesConsumedOnUse so they are effectively free to cast.
+
+CODE STRUCTURE
+--------------
+The mod is organized into focused modules. main.lua is purely a wiring file
+(imports, keybinds, console command handlers) with no implementation logic.
+
+  main.lua                        Wiring — imports, hotkey binds, console handlers
+  player_utils.lua                Player state — stamina, cooldowns, leveling, anim speed
+  inventory_utils.lua             Inventory traversal, item editing, weapon level setting
+  cheat_hooks.lua                 God mode toggle + infinite ammo session hook
+  WeaponMods/WeaponMods.lua       Aggregator — owns all weapon mod imports, exposes
+                                  EnableAllWeaponMods() as a single entry point
+  WeaponMods/mod_hotshot.lua        Weapon mod booster (Mod_Hotshot_C)
+  WeaponMods/mod_sandstorm.lua      Weapon mod booster (Mod_Sandstorm_C)
+  WeaponMods/mod_concussiveshot.lua Weapon mod booster (Mod_ConcussiveShot_C)
+  WeaponMods/mod_helix.lua          Weapon mod booster (Mod_Helix_C)
+  WeaponMods/mod_statisbeam.lua     Weapon mod booster (Mod_StasisBeam_C)
+  WeaponMods/mod_voltaic_rondure.lua  Weapon mod booster (Mod_VoltaicRondure_C)
+  WeaponMods/mod_scrapshot.lua      Weapon mod booster (Mod_Scrapshot_C)
+  WeaponMods/mod_rottedarrow.lua    Weapon mod booster (Mod_RottedArrow_C)
+
+Planned weapon mod additions (tracked in WeaponMods.lua):
+  Mod_Skewer_C, Mod_Defrag_C, Mod_AbrasiveRounds_C, Mod_HeatWave_C, Mod_Tremor_C
 
 Installation 
 -------
@@ -90,7 +94,7 @@ FEATURES
    - Instantly resets all skill Cooldowns and fills Mod Power in a single
      keypress. Health, Ammo, and Dragon Hearts are not affected.
    - Recommended to bind to R1 (controller) or equivalent for quick access
-     mid-combat. Works cleanly with RegisterKeyBind — no console required.
+     mid-combat.
 
 2. INFINITE STAMINA (Hotkey: F2)
    - Locates the player's Stamina component and appends the FName tag
@@ -111,6 +115,7 @@ FEATURES
      unequipped mods are not found and are silently skipped with no errors.
    - Each module captures baseline values on first activation — pressing F4
      again is idempotent and will not compound the multipliers.
+   - Re-press after switching weapon mods to apply boosts to newly equipped ones.
    - Supported mods and their boosted stats:
        HotShot         FireDuration, FireBaseDamage, ModDuration
        Sandstorm        CycloneDuration, CycloneBaseRadius, CycloneHomingRadius,
@@ -156,21 +161,22 @@ FEATURES
    - With "true": logs every item in the inventory regardless of type.
    - Handy for identifying the exact name to pass to set_inventory_item_quantity.
 
-9. GOD MODE (Console Command: start_god_mode)
-   - Registers a permanent hook into HandleDamageTaken. On any hit, health is
-     immediately replenished, making the player effectively unkillable.
-   - One-shot activation — no toggle. Active for the remainder of the session.
-   - To disable: restart the game.
-   - Note: the hook can occasionally unregister during loading screen
-     transitions. If god mode stops working, simply re-run start_god_mode.
+9. GOD MODE (Console Command: toggle_god_mode)
+   - Toggles God Mode on/off. Hooks into ModifyIncomingDamage on first use —
+     all incoming damage is zeroed before it is applied, making the player
+     effectively unkillable with no visible health drop.
+   - The hook registers once on first toggle and persists; subsequent calls
+     toggle the damage-zeroing behavior on/off via a shared closure flag.
+   - Note: if the hook drops during a loading screen transition, re-run
+     toggle_god_mode twice (off then on) to re-register it.
 
 10. INFINITE AMMO (Console Command: start_infinite_ammo)
-    - Registers a permanent hook into Weapon_Gun_Base_C:OnFire. On every shot,
-      ammo is instantly replenished so magazines never run dry.
-    - One-shot activation — no toggle. Active for the remainder of the session.
+    - Registers a permanent hook into Weapon_Gun_Base_C:OnFire. Every time
+      the player fires, ammo is instantly replenished so magazines never run dry.
+    - One-shot activation — active for the remainder of the session.
     - To disable: restart the game.
-    - Note: the hook can occasionally unregister during loading screen
-      transitions. If infinite ammo stops working, simply re-run start_infinite_ammo.
+    - Note: the hook can occasionally drop during loading screen transitions.
+      Re-run start_infinite_ammo if it stops working.
 
 
 HOTKEYS REFERENCE
@@ -188,7 +194,7 @@ CONSOLE COMMANDS REFERENCE - Open console with ~ or F10
   set_all_weapon_level <level>                       - Set all weapons in inventory to <level>
   set_inventory_item_quantity <itemName> <quantity>  - Set quantity of named item (alias or blueprint name)
   log_inventory_items [true|false]                   - Print inventory items to console (true = all items)
-  start_god_mode                                     - Enable god mode for this session (restart game to disable)
-  start_infinite_ammo                                - Enable infinite ammo for this session (restart game to disable)
+  toggle_god_mode                                    - Toggle god mode on/off (zeroes damage before it applies)
+  start_infinite_ammo                                - Enable infinite ammo for this session (restart to disable)
 
 ================================================================================

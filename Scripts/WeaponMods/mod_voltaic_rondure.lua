@@ -1,20 +1,20 @@
--- this mod is way too overpowered
--- use with caution
 local VoltaicRondureDefaults = {
-    MaxCharges = nil,
-    OrbDamage = nil,
-    ProjectileLifetime = nil,
-    EffectRadius = nil,
-    ShockDamage = nil,
+    PulseDelay = nil, -- 0.01
+    MaxCharges = nil, -- .5
+    OrbDamage = nil, -- 30
+    ProjectileLifetime = nil, -- 20
+    EffectRadius = nil, -- 600
+    ShockDamage = nil, -- 25
+    ShockDuration = nil, -- 15
     NumChargesConsumedOnUse = nil,
 }
 
 local VoltaicRondureMultipliers = {
     MaxCharges = 10,
-    OrbDamage = 2,
-    ProjectileLifetime = 0.1,
-    EffectRadius = 0.5,
-    ShockDamage = 2,
+    OrbDamage = 10,
+    ProjectileLifetime = 1,
+    EffectRadius = 3,
+    ShockDamage = 10,
     ShockDuration = 2,
     NumChargesConsumedOnUse = 0,
 }
@@ -40,7 +40,7 @@ local function ModVoltaicRondure()
             mod.NumChargesConsumedOnUse = VoltaicRondureDefaults.NumChargesConsumedOnUse * VoltaicRondureMultipliers.NumChargesConsumedOnUse
             mod.PulseDelay = 0.01
             mod.OrbDamage = VoltaicRondureDefaults.OrbDamage * VoltaicRondureMultipliers.OrbDamage
-            mod.ProjectileLifetime = 2.0 -- short burst of one shots
+            mod.ProjectileLifetime = VoltaicRondureDefaults.ProjectileLifetime * VoltaicRondureMultipliers.ProjectileLifetime
             mod.EffectRadius = VoltaicRondureDefaults.EffectRadius * VoltaicRondureMultipliers.EffectRadius
             mod.ShockDamage = VoltaicRondureDefaults.ShockDamage * VoltaicRondureMultipliers.ShockDamage
             mod.ShockDuration = VoltaicRondureDefaults.ShockDuration * VoltaicRondureMultipliers.ShockDuration

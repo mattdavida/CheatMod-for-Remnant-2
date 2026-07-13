@@ -4,7 +4,7 @@ A UE4SS-based Lua scripting mod for Remnant 2 that grants a suite of in-game che
 
 The mod focuses on quality-of-life cheating: keeping the player alive, bypassing stamina limits, leveling up on demand, boosting combat feel, and managing inventory item quantities and weapon levels — all without needing Cheat Engine or a save editor.
 
-God Mode and Infinite Ammo register a permanent session hook when you run the command — one-shot activation, no toggle. They stay active for the rest of the session. Restart the game to disable. If a hook drops during a loading screen transition, just re-run the command. Weapon mod boosting is handled by eight dedicated per-mod modules, each idempotent and safe to re-trigger.
+**God Mode** is a true toggle — it hooks `ModifyIncomingDamage` and zeroes all damage before it is applied. No visible health drop, no heal-after. **Infinite Ammo** is a session-persistent hook registered on first use. Weapon mod boosting is handled by eight dedicated per-mod modules, each idempotent and safe to re-trigger.
 
 ---
 
@@ -48,7 +48,7 @@ God Mode and Infinite Ammo register a permanent session hook when you run the co
 | `main.lua` | Wiring — imports, hotkey binds, console command handlers |
 | `player_utils.lua` | Player state — stamina, cooldowns, leveling, animation speed |
 | `inventory_utils.lua` | Inventory traversal, item quantity editing, weapon level setting |
-| `cheat_hooks.lua` | Session-persistent hooks — god mode, infinite ammo |
+| `cheat_hooks.lua` | God mode toggle + infinite ammo session hook |
 | `WeaponMods/WeaponMods.lua` | Aggregator — owns all weapon mod imports, exposes `EnableAllWeaponMods()` |
 | `WeaponMods/mod_*.lua` (×8) | Per-weapon-mod boosters (one file per supported mod) |
 
@@ -63,7 +63,7 @@ God Mode and Infinite Ammo register a permanent session hook when you run the co
 | `F1` | **Replenish Cooldowns & Mod Power** | Instantly resets all skill cooldowns and fills Mod Power. Health, Ammo, and Dragon Hearts are not affected. Tip: bind to R1 or a controller equivalent for quick mid-combat access. |
 | `F2` | **Infinite Stamina** | Appends the `InfiniteStamina` FName tag to the player's Stamina component. May need to be re-applied after death or level transitions. |
 | `F3` | **Fast Player Actions** | Boosts the `RateScale` of all non-locomotion player animations. Walking, jogging, sprinting, running, crouching, and aiming are unaffected. Evade roll is tuned separately. |
-| `F4` | **Boost All Supported Weapon Mods** | Fires all eight weapon mod boost modules in sequence. Each captures baseline values on first press and applies multipliers from that baseline — re-pressing is safe and idempotent. Only mods currently equipped on your weapons are in memory; unequipped mods are silently skipped. |
+| `F4` | **Boost All Supported Weapon Mods** | Fires all eight weapon mod boost modules in sequence. Each captures baseline values on first press and applies multipliers from that baseline — re-pressing is safe and idempotent. Only mods currently equipped on your weapons are in memory; unequipped mods are silently skipped. Re-press after switching weapon mods. |
 
 **Mods boosted by F4:**
 
@@ -90,8 +90,8 @@ Open the console with `` ` `` (tilde) or `F10`.
 | `set_all_weapon_level <level>` | Sets every weapon in the player's inventory to the specified upgrade level. |
 | `set_inventory_item_quantity <itemName> <quantity>` | Sets the quantity of a named inventory item. Supports friendly name aliases (e.g. `Iron` resolves to `Material_Iron_C`) or raw blueprint name search. Logs the old and new values. |
 | `log_inventory_items [true\|false]` | Prints inventory item blueprint names and instance data to the console. Omit the flag (or pass `false`) to log only materials and consumables; pass `true` to log every item. Useful for finding the exact name to pass to `set_inventory_item_quantity`. |
-| `start_god_mode` | Registers a permanent hook into `HandleDamageTaken` — any hit immediately replenishes health for the rest of the session. No toggle; restart the game to disable. Re-run if the hook drops during a loading screen transition. |
-| `start_infinite_ammo` | Registers a permanent hook into `Weapon_Gun_Base_C:OnFire` — ammo is replenished on every shot for the rest of the session. No toggle; restart the game to disable. Re-run if the hook drops during a loading screen transition. |
+| `toggle_god_mode` | Toggles God Mode on/off. Hooks `ModifyIncomingDamage` on first use — all damage is zeroed before it applies. No visible health drop. Re-run twice (off/on) if the hook drops during a loading screen transition. |
+| `start_infinite_ammo` | Registers a permanent hook into `Weapon_Gun_Base_C:OnFire` — ammo replenishes on every shot. Active for the session; restart the game to disable. Re-run if the hook drops during a loading screen transition. |
 
 ---
 
@@ -107,6 +107,7 @@ Open the console with `` ` `` (tilde) or `F10`.
 
 - **Infinite Stamina** may need to be re-applied after respawning or transitioning between areas.
 - **Fast Player Actions** affects all currently loaded `AnimSequence` objects — press `F3` again after loading into a new area if animations reset.
-- **God Mode and Infinite Ammo** are session-persistent once started. Restart the game to disable. If a hook drops during a loading screen transition, re-run the command to restore it.
-- **Weapon mod boosts (F4)** are idempotent — safe to press multiple times without compounding the multipliers. Only mods equipped on your current weapons will be in memory; others are silently skipped. Re-press after switching weapon mods to apply boosts to newly equipped ones.
+- **God Mode** is a true toggle. The hook registers once on first use and persists; the on/off state is controlled by a closure flag. If the hook drops during a loading screen, run `toggle_god_mode` twice to re-register.
+- **Infinite Ammo** is session-persistent — restart the game to disable. Re-run `start_infinite_ammo` if it drops during a transition.
+- **Weapon mod boosts (F4)** are idempotent — safe to press multiple times. Re-press after switching weapon mods to apply boosts to newly equipped ones.
 - `log_inventory_items` is a handy discovery tool when you don't know the exact blueprint name for an item you want to modify with `set_inventory_item_quantity`.
